@@ -6,6 +6,12 @@ using UnityEngine;
 namespace GoFish
 {
     [Serializable]
+    public class EncryptedData
+    {
+        public byte[] data;
+    }
+
+    [Serializable]
     public class GameDataManager
     {
         Player localPlayer;
@@ -14,11 +20,11 @@ namespace GoFish
         [SerializeField]
         ProtectedData protectedData;
 
-        public GameDataManager(Player local, Player remote)
+        public GameDataManager(Player local, Player remote, string roomId = "1234567890123456")
         {
             localPlayer = local;
             remotePlayer = remote;
-            protectedData = new ProtectedData(localPlayer.PlayerId, remotePlayer.PlayerId);
+            protectedData = new ProtectedData(localPlayer.PlayerId, remotePlayer.PlayerId, roomId);
         }
 
         public void Shuffle()
@@ -55,6 +61,7 @@ namespace GoFish
             poolOfCards.RemoveRange(start, numberOfCards);
 
             protectedData.AddCardValuesToPlayer(player, cardValues);
+            protectedData.SetPoolOfCards(poolOfCards);
         }
 
         public byte DrawCardValue()
@@ -67,7 +74,7 @@ namespace GoFish
             {
                 byte cardValue = poolOfCards[numberOfCardsInThePool - 1];
                 poolOfCards.Remove(cardValue);
-
+                protectedData.SetPoolOfCards(poolOfCards);
                 return cardValue;
             }
 
@@ -77,6 +84,11 @@ namespace GoFish
         public List<byte> PlayerCards(Player player)
         {
             return protectedData.PlayerCards(player);
+        }
+
+        public List<byte> PlayerBooks(Player player)
+        {
+            return protectedData.PlayerBooks(player);
         }
 
         public void AddCardValuesToPlayer(Player player, List<byte> cardValues)
@@ -94,9 +106,9 @@ namespace GoFish
             protectedData.RemoveCardValuesFromPlayer(player, cardValuesToRemove);
         }
 
-        public void AddBooksForPlayer(Player player, int numberOfNewBooks)
+        public void AddBooksForPlayer(Player player, Ranks ranks)
         {
-            protectedData.AddBooksForPlayer(player, numberOfNewBooks);
+            protectedData.AddBooksForPlayer(player, ranks);
         }
 
         public Player Winner()
@@ -170,6 +182,77 @@ namespace GoFish
             int index = UnityEngine.Random.Range(0, playerCards.Count);
 
             return Card.GetRank(playerCards[index]);
+        }
+
+        public void SetCurrentTurnPlayer(Player player)
+        {
+            protectedData.SetCurrentTurnPlayerId(player.PlayerId);
+        }
+
+        public Player GetCurrentTurnPlayer()
+        {
+            string playerId = protectedData.GetCurrentTurnPlayerId();
+            if (localPlayer.PlayerId.Equals(playerId))
+            {
+                return localPlayer;
+            }
+            else
+            {
+                return remotePlayer;
+            }
+        }
+
+        public Player GetCurrentTurnTargetPlayer()
+        {
+            string playerId = protectedData.GetCurrentTurnPlayerId();
+            if (localPlayer.PlayerId.Equals(playerId))
+            {
+                return remotePlayer;
+            }
+            else
+            {
+                return localPlayer;
+            }
+        }
+
+        public void SetGameState(Game.GameState gameState)
+        {
+            protectedData.SetGameState((int)gameState);
+        }
+
+        public Game.GameState GetGameState()
+        {
+            return (Game.GameState)protectedData.GetGameState();
+        }
+
+        public void SetSelectedRank(Ranks rank)
+        {
+            protectedData.SetSelectedRank((int)rank);
+        }
+
+        public Ranks GetSelectedRank()
+        {
+            return (Ranks)protectedData.GetSelectedRank();
+        }
+
+        public EncryptedData EncryptedData()
+        {
+            Byte[] data = protectedData.ToArray();
+
+            EncryptedData encryptedData = new EncryptedData();
+            encryptedData.data = data;
+
+            return encryptedData;
+        }
+
+        public void ApplyEncrptedData(EncryptedData encryptedData)
+        {
+            if(encryptedData == null)
+            {
+                return;
+            }
+
+            protectedData.ApplyByteArray(encryptedData.data);
         }
     }
 }
