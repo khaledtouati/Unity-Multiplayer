@@ -11,25 +11,32 @@ namespace GoFish
     {
         public Text MessageText;
 
-        CardAnimator cardAnimator;
+        protected CardAnimator cardAnimator;
 
-        public GameDataManager gameDataManager;
+        [SerializeField]
+        protected GameDataManager gameDataManager;
 
         public List<Transform> PlayerPositions = new List<Transform>();
         public List<Transform> BookPositions = new List<Transform>();
 
-        Player localPlayer;
-        Player remotePlayer;
+        [SerializeField]
+        protected Player localPlayer;
+        [SerializeField]
+        protected Player remotePlayer;
 
-        Player currentTurnPlayer;
-        Player currentTurnTargetPlayer;
+        [SerializeField]
+        protected Player currentTurnPlayer;
+        [SerializeField]
+        protected Player currentTurnTargetPlayer;
 
-        Card selectedCard;
-        Ranks selectedRank;
+        [SerializeField]
+        protected Card selectedCard;
+        [SerializeField]
+        protected Ranks selectedRank;
 
         public enum GameState
         {
-            Idel,
+            Idle,
             GameStarted,
             TurnStarted,
             TurnSelectingNumber,
@@ -40,10 +47,12 @@ namespace GoFish
             GameFinished
         };
 
-        public GameState gameState = GameState.Idel;
+        [SerializeField]
+        protected GameState gameState = GameState.Idle;
 
-        private void Awake()
+        protected void Awake()
         {
+            Debug.Log("base awake");
             localPlayer = new Player();
             localPlayer.PlayerId = "offline-player";
             localPlayer.PlayerName = "Player";
@@ -60,14 +69,14 @@ namespace GoFish
             cardAnimator = FindObjectOfType<CardAnimator>();
         }
 
-        void Start()
+        protected void Start()
         {
             gameState = GameState.GameStarted;
             GameFlow();
         }
 
         //****************** Game Flow *********************//
-        public void GameFlow()
+        public virtual void GameFlow()
         {
             if (gameState > GameState.GameStarted)
             {
@@ -82,9 +91,9 @@ namespace GoFish
 
             switch (gameState)
             {
-                case GameState.Idel:
+                case GameState.Idle:
                     {
-                        Debug.Log("IDEL");
+                        Debug.Log("IDLE");
                         break;
                     }
                 case GameState.GameStarted:
@@ -138,7 +147,7 @@ namespace GoFish
             }
         }
 
-        void OnGameStarted()
+        protected virtual void OnGameStarted()
         {
             gameDataManager = new GameDataManager(localPlayer, remotePlayer);
             gameDataManager.Shuffle();
@@ -151,7 +160,7 @@ namespace GoFish
             gameState = GameState.TurnStarted;
         }
 
-        void OnTurnStarted()
+        protected virtual void OnTurnStarted()
         {
             SwitchTurn();
             gameState = GameState.TurnSelectingNumber;
@@ -179,7 +188,7 @@ namespace GoFish
             }
         }
 
-        public void OnTurnConfirmedSelectedNumber()
+        protected virtual void OnTurnConfirmedSelectedNumber()
         {
             if (currentTurnPlayer == localPlayer)
             {
@@ -203,7 +212,7 @@ namespace GoFish
             }
         }
 
-        public void OnTurnOpponentConfirmed()
+        protected virtual void OnTurnOpponentConfirmed()
         {
             List<byte> cardValuesFromTargetPlayer = gameDataManager.TakeCardValuesWithRankFromPlayer(currentTurnTargetPlayer, selectedRank);
 
@@ -222,7 +231,7 @@ namespace GoFish
             }
         }
 
-        public void OnTurnGoFish()
+        protected virtual void OnTurnGoFish()
         {
             SetMessage($"Go fish!");
 
@@ -270,7 +279,7 @@ namespace GoFish
             }
         }
 
-        void SetMessage(string message)
+        protected void SetMessage(string message)
         {
             MessageText.text = message;
         }
@@ -307,9 +316,8 @@ namespace GoFish
                     player.ReceiveBook(book.Key, cardAnimator);
 
                     gameDataManager.RemoveCardValuesFromPlayer(player, book.Value);
+                    gameDataManager.AddBooksForPlayer(player, book.Key);
                 }
-
-                gameDataManager.AddBooksForPlayer(player, books.Count);
             }
         }
 
@@ -351,7 +359,7 @@ namespace GoFish
             }
         }
 
-        public void OnOkSelected()
+        public virtual void OnOkSelected()
         {
             if (gameState == GameState.TurnSelectingNumber && localPlayer == currentTurnPlayer)
             {
@@ -369,7 +377,7 @@ namespace GoFish
         }
 
         //****************** Animator Event *********************//
-        public void AllAnimationsFinished()
+        public virtual void AllAnimationsFinished()
         {
             GameFlow();
         }

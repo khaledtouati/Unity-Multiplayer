@@ -16,20 +16,20 @@ namespace GoFish
         public Vector2 Position;
         public Vector2 BookPosition;
 
-        int NumberOfDisplayingCards;
-        int NumberOfBooks;
+        int numberOfDisplayingCards;
+        int numberOfBooks;
 
         public List<Card> DisplayingCards = new List<Card>();
 
         public Vector2 NextCardPosition()
         {
-            Vector2 nextPos = Position + Vector2.right * Constants.PLAYER_CARD_POSITION_OFFSET * NumberOfDisplayingCards;
+            Vector2 nextPos = Position + Vector2.right * Constants.PLAYER_CARD_POSITION_OFFSET * numberOfDisplayingCards;
             return nextPos;
         }
 
         public Vector2 NextBookPosition()
         {
-            Vector2 nextPos = BookPosition + Vector2.right * Constants.PLAYER_BOOK_POSITION_OFFSET * NumberOfBooks;
+            Vector2 nextPos = BookPosition + Vector2.right * Constants.PLAYER_BOOK_POSITION_OFFSET * numberOfBooks;
             return nextPos;
         }
 
@@ -69,7 +69,7 @@ namespace GoFish
         {
             DisplayingCards.Add(card);
             card.OwnerId = PlayerId;
-            NumberOfDisplayingCards++;
+            numberOfDisplayingCards++;
         }
 
         public void ReceiveBook(Ranks rank, CardAnimator cardAnimator)
@@ -90,15 +90,37 @@ namespace GoFish
 
             DisplayingCards.RemoveAll(card => displayingCardsToRemove.Contains(card));
             RepositionDisplayingCards(cardAnimator);
-            NumberOfBooks++;
+            numberOfBooks++;
+        }
+
+
+        public void RestoreBook(Ranks rank, CardAnimator cardAnimator)
+        {
+            Vector2 targetPosition = NextBookPosition();
+
+            for (int i = 0; i < 4; i++)
+            {
+                Card card = cardAnimator.TakeFirstDisplayingCard();
+
+                int intRankValue = (int)rank;
+                int cardValue = (intRankValue - 1) * 4 + i;
+
+                card.SetCardValue((byte)cardValue);
+                card.SetFaceUp(true);
+                float randomRotation = UnityEngine.Random.Range(-1 * Constants.BOOK_MAX_RANDOM_ROTATION, Constants.BOOK_MAX_RANDOM_ROTATION);
+                card.transform.position = targetPosition;
+                card.transform.rotation = Quaternion.Euler(Vector3.forward * randomRotation);
+            }
+
+            numberOfBooks++;
         }
 
         public void RepositionDisplayingCards(CardAnimator cardAnimator)
         {
-            NumberOfDisplayingCards = 0;
+            numberOfDisplayingCards = 0;
             foreach (Card card in DisplayingCards)
             {
-                NumberOfDisplayingCards++;
+                numberOfDisplayingCards++;
                 cardAnimator.AddCardAnimation(card, NextCardPosition());
             }
         }
@@ -142,7 +164,7 @@ namespace GoFish
                     DisplayingCards.Remove(card);
                     receivingPlayer.ReceiveDisplayingCard(card);
                     cardAnimator.AddCardAnimation(card, receivingPlayer.NextCardPosition());
-                    NumberOfDisplayingCards--;
+                    numberOfDisplayingCards--;
                 }
                 else
                 {
